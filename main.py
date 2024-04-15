@@ -12,6 +12,7 @@ class process():
 processNum = int(input("how many processes would you like to simulate?: "))
 
 processList = []
+processDict = {}
 
 #inputting each process
 for i in range(processNum):
@@ -19,6 +20,7 @@ for i in range(processNum):
     turnaround_time = int(input("Indicate Turnaround time of process "+str(i+1)+" (ns): "))
     p = process(i, turnaround_time, arrival_time)
     processList.append(p)
+    processDict[str(p.id)] = p
     print("===========================================")
 
 print("Processes")
@@ -100,7 +102,7 @@ def roundRobin(pList, t_q):
 
         #handles the process queue
         if len(rrq) > 0:
-            print("runningfor: " + str(runningFor))
+            #print("runningfor: " + str(runningFor))
             # handle processpointer
             if runningFor == (t_q):
                 print("     context switch")
@@ -149,5 +151,23 @@ elif (algorithm == "round robin" or algorithm == "roundrobin"):
     t_quant = int(input("Indicate the time quantum (ns): "))
     mergeSort_arrivalTime(processList)
     roundRobin(processList, t_quant)
-    print("simulation done")
-    
+
+print("========================================================")
+print("SIMULATION TERMINATED. Here are the stats of each process")
+for i in range(len(processList)):
+    proc = processDict[str(i)]
+    print("     Process " + str(i) + " A_t: " + str(proc.arrivalTime) + " T_t: " + str(proc.turnaroundTime) + " W_t: " + str(proc.waitingTime))
+print("\nHere's some stats across all processes")
+total_T_t = 0
+total_W_t = 0
+
+for p in processList:
+    total_T_t += p.turnaroundTime
+    total_W_t += p.waitingTime
+
+print("     Total turnaround time: " + str(total_T_t) + " ns")
+print("     Total waiting time: " + str(total_W_t) + " ns")
+print("")
+print("     Average turnaround time: " + str(total_T_t/len(processList)) + " ns")
+print("     Average waiting time: " + str(total_W_t/len(processList)) + " ns")
+print("========================================================")
