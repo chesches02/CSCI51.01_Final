@@ -78,67 +78,81 @@ def roundRobin(pList, t_q):
     print("======================================")
 
     processesLeft = len(pList)
-    timeLeft = []
     processIndex = 0
-    currentProcessPointer = 0
+    timeLeft_all = []
+    timeLeft_currentProc = None
+    currentProcess = None
     rrq = []
-    hasZero = False
     ns = 0
     runningFor = 0
 
     while(processesLeft > 0):
-        print(ns)
+        print("ns: " + str(ns))
 
         try:
             #take all processes that arrive at this nanosecond and add them to the process queue
             while(pList[processIndex].arrivalTime == ns):
                 arrivingProc = pList[processIndex]
-                print("     Process "+ str(arrivingProc.id) + " has arrived")
                 rrq.append(arrivingProc)
-                timeLeft.append(arrivingProc.turnaroundTime)
+                timeLeft_all.append(arrivingProc.turnaroundTime)
+                print("     Process "+ str(arrivingProc.id) + " has arrived")
                 processIndex += 1
         except:
             pass
 
-        #handles the process queue
-        if len(rrq) > 0:
-            #print("runningfor: " + str(runningFor))
-            # handle processpointer
-            if runningFor == (t_q):
-                print("     context switch")
-                currentProcessPointer += 1
-                currentProcessPointer %= len(rrq)
-                runningFor = 1
+        #context switching
+        if runningFor >= t_q:
+            runningFor = 0
+            # back to the end of the queue
+            rrq.append(currentProcess)
+            timeLeft_all.append(timeLeft_currentProc)
+            # clear values
+            currentProcess = None
+            timeLeft_currentProc = None
+        
+        # get a new process
+        if currentProcess == None and len(rrq) > 0:
+            currentProcess = rrq.pop(0)
+            timeLeft_currentProc = timeLeft_all.pop(0)
+            print(f"     Switched to process {currentProcess.id}")
+
+        # run current process
+        if currentProcess != None and runningFor < t_q:
+            if timeLeft_currentProc == 1:
+                #run it one last time and context switch immediately
+                print(f"       Process {currentProcess.id} has ran its last nanosecond and will now terminate.")
+                currentProcess = None
+                timeLeft_currentProc = None
+                processesLeft -= 1
+                # early context switch agad, get a new process and run it
+                if len(rrq) > 0:
+                    currentProcess = rrq.pop(0)
+                    timeLeft_currentProc = timeLeft_all.pop(0)
+                    print(f"     Switched to process {currentProcess.id}")
+                    print(f"     Process {currentProcess.id} waited for 1 ns")
+                    currentProcess.waitingTime += 1
+                runningFor = 0
+
             else:
+                print(f"       Process {currentProcess.id} ran for 1 ns")
+                timeLeft_currentProc -= 1
                 runningFor += 1
 
-            hasZero = False
-            # Iterates through every process and either deducts its turnaroundTime or adds its waitingTime
-            for i in range(len(rrq)):
-                if i == currentProcessPointer:
-                    timeLeft[i] -= 1
-                    print("     Process "+ str(rrq[i].id) + " ran for 1 ns with " + str(timeLeft[i]) + " ns left")
-                    if timeLeft[i] == 0:
-                        hasZero = True
-                else:
-                    print("     Process "+ str(rrq[i].id) + " waited for 1 ns")
-                    pList[currentProcessPointer].waitingTime += 1
-            
-            # find where the zero is when detected
-            if hasZero:
-                i = 0
-                while i < len(rrq):
-                    if timeLeft[i] == 0:
-                        rrq.pop(i)
-                        timeLeft.pop(i)
-                        print("     context switch early finish")
-                        processesLeft -= 1
-                        runningFor = 1
-                    else:
-                        i += 1
+        
+
+        # make all processes in the ready queue wait 1 ns
+        for p in rrq:
+            print(f"     Process {p.id} waited for 1 ns")
+            p.waitingTime += 1
+        
+        print("process queue: " + str([p.id for p in rrq if len(rrq) > 0]))
+        print("Time left: " + str(timeLeft_all))
 
         ns += 1
+        print("============================================")
         #time.sleep(0.5)
+
+        
 
 algorithm = (input("Which Scheduling algorithm would you like to simulate,type \n either SJF, Preemptive, or Round Robin only."))
 algorithm.lower
