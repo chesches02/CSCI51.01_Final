@@ -1,4 +1,5 @@
 import time
+import math
 class process():
     waitingTime = 0
     def __init__(self, id, turnaroundTime, arrivalTime):
@@ -76,24 +77,40 @@ def BST_Insert(obj, li5t):
     timeLeft = obj.turnaroundTime
 
     list_len = len(li5t)
-    skip = list_len//2
-    pointerIndex = 0
+    pointerIndex = list_len//2
+    skip = pointerIndex // 2
+
+    if skip < 1: 
+        skip = 1
 
     if (list_len == 0):
         li5t.append(obj)
     elif (timeLeft >= li5t[list_len-1].turnaroundTime):
         li5t.append(obj)
-    elif (timeLeft < li5t[list_len-1].turnaroundTime):
-        li5t.insert(0, obj)
+    elif (timeLeft <= li5t[0].turnaroundTime):
+        pointerIndex = 0
+
+        #honor fcfs
+        while (timeLeft == li5t[pointerIndex].turnaroundTime and pointerIndex < list_len):
+            pointerIndex += 1
+        li5t.insert(pointerIndex, obj)
+
     else:
-        while (not (timeLeft >= li5t[pointerIndex].turnaroundTime and timeLeft < li5t[pointerIndex+1].turnaroundTime)):
+        while (not (timeLeft <= li5t[pointerIndex].turnaroundTime and timeLeft > li5t[pointerIndex-1].turnaroundTime)):
         
-            if (timeLeft <= li5t[pointerIndex].turnaroundTime):
+            if (timeLeft > li5t[pointerIndex].turnaroundTime):
                 pointerIndex += skip
             else:
                 pointerIndex -= skip
-            skip = (skip // 2) + 1
+            skip = math.ceil(skip/2)
+
+        print(f"pIndex:{pointerIndex} skip:{skip}")
             
+        #honor fcfs
+        while (timeLeft == li5t[pointerIndex].turnaroundTime and pointerIndex < list_len):
+            pointerIndex += 1
+
+        li5t.insert(pointerIndex, obj)
 
 def sjf(pList):
     ns = 0
@@ -144,7 +161,7 @@ def sjf(pList):
             isRunning = True
 
         ns+=1
-        #time.sleep(1)
+        #time.sleep(0.5)
 
 algorithm = (input("Which Scheduling algorithm would you like to simulate,type \n either SJF, Preemptive, or Round Robin only."))
 algorithm.lower
@@ -170,8 +187,8 @@ for p in processList:
     total_W_t += p.waitingTime
 
 print("     Total turnaround time: " + str(total_T_t) + " ns")
-print("     Total waiting time: " + str(total_T_t) + " ns")
+print("     Total waiting time: " + str(total_W_t) + " ns")
 print("")
 print("     Average turnaround time: " + str(total_T_t/len(processList)) + " ns")
-print("     Average waiting time: " + str(total_T_t/len(processList)) + " ns")
+print("     Average waiting time: " + str(total_W_t/len(processList)) + " ns")
 print("========================================================")
