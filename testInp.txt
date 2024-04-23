@@ -37,4 +37,4 @@ sjf
 1
 10
 3
-sjf
+preemptive
