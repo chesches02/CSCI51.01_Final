@@ -104,40 +104,51 @@ def BST_Insert(obj, li5t):
             else:
                 pointerIndex -= skip
             skip = math.ceil(skip/2)
-
-        print(f"pIndex:{pointerIndex} skip:{skip}")
         
         #honor fcfs
         while (timeLeft == li5t[pointerIndex].turnaroundTime and pointerIndex < list_len):
             pointerIndex += 1
 
         li5t.insert(pointerIndex, obj)
-        li5t.insert(pointerIndex, obj)
+
             
 def BST_Insert_2(obj_tl, li5t):
 
     # li5t contains tuples (obj, timeLeft)
     timeLeft = obj_tl[1]
-    obj = obj_tl[0]
 
     list_len = len(li5t)
-    skip = list_len//2
-    pointerIndex = 0
+    pointerIndex = list_len//2
+    skip = (pointerIndex // 2) - 1
+
+    if skip < 1:
+        skip = 1
 
     if (list_len == 0):
         li5t.append(obj_tl)
     elif (timeLeft >= li5t[list_len-1][1]):
         li5t.append(obj_tl)
-    elif (timeLeft < li5t[list_len-1][1]):
-        li5t.insert(0, obj_tl)
+    elif (timeLeft <= li5t[0][1]):
+        pointerIndex = 0
+
+        # honor fcfs
+        while (li5t[pointerIndex][1] == timeLeft and pointerIndex < list_len):
+            pointerIndex += 1
+
+        li5t.insert(pointerIndex, obj_tl)
     else:
-        while (not (timeLeft >= li5t[pointerIndex][1] and timeLeft < li5t[pointerIndex+1][1])):
+        while (not (timeLeft <= li5t[pointerIndex][1] and timeLeft > li5t[pointerIndex-1][1])):
         
-            if (timeLeft <= li5t[pointerIndex][1]):
+            if (timeLeft > li5t[pointerIndex][1]):
                 pointerIndex += skip
             else:
                 pointerIndex -= skip
-            skip = (skip // 2) + 1
+
+            skip = math.ceil(skip/2)
+
+        # honor fcfs
+        while (li5t[pointerIndex][1] == timeLeft and pointerIndex < list_len):
+            pointerIndex += 1
         
         li5t.insert(pointerIndex, obj_tl)
 
@@ -192,137 +203,77 @@ def sjf(pList):
         ns+=1
         #time.sleep(1)
 
-def sjf_preemptive(pList):
-
+def sjf_preemptive_2(pList):
+    ns = 0
+    #processArrivalQueue = mergeSort_arrivalTime(pList)
+    
     print("Processes sorted by arrival time")
     for i in range(processNum):
         print("Process "+str(processList[i].id)+" A_t: "+ str(pList[i].arrivalTime)+" T_t: "+str(pList[i].turnaroundTime))
     print("======================================")
-
-    SJF_preemptive_queue = []
-    isRunning = []
-    currentProcess = None # formatted as (process_obj, int_timeLeft)
+    
     processIndex = 0
-    processLeft = len(pList)
-    ns = 0
-
-    while (processLeft > 0):
-        print(ns)
+    processesLeft = len(pList)
+    SJFpreemptiveQueue = []
+    currentProcess = None #formatted as [currentProcess, remainingTime]
+    while (processesLeft > 0):
         try:
-            #take all processes that arrive at this nanosecond
+            print("ns: " + str(ns) + " nextArrival:" + str(pList[processIndex].arrivalTime))
+        except:
+            print("ns: " + str(ns))
+
+        try:
+            #take all processes that arrive at this nanosecond and add them to the process queue
             while(pList[processIndex].arrivalTime == ns):
                 arrivingProc = pList[processIndex]
                 print("     Process "+str(arrivingProc.id)+ " has arrived")
-                # check if it can preempt the current process if there is one
+
+                #check if it can preempt current process, if it exists
                 if currentProcess != None:
-                    # preemption condition
                     if arrivingProc.turnaroundTime < currentProcess[1]:
-                        BST_Insert_2(currentProcess, SJF_preemptive_queue)
+                        print("     Process "+str(arrivingProc.id)+ " is shorter. Proceed to preemption")
+                        BST_Insert_2(currentProcess, SJFpreemptiveQueue)
+                        print("     BST_insert_2 successful")
                         currentProcess = [arrivingProc, arrivingProc.turnaroundTime]
-                        print(f"     Process {arrivingProc.id} is faster. Proceed to preemption.")
-                    # no preemption
                     else:
-                        ob_t = [arrivingProc, arrivingProc.turnaroundTime]
-                        BST_Insert_2(ob_t, SJF_preemptive_queue)
+                        print("     No preemption")
+                        BST_Insert_2([arrivingProc, arrivingProc.turnaroundTime], SJFpreemptiveQueue)
+                        print("     BST_insert_2 successful non preepmtive")
                 else:
+                    print("     No running process")
                     currentProcess = [arrivingProc, arrivingProc.turnaroundTime]
-               
-                print("     Process SJF Queue: " + str(SJF_preemptive_queue))
+
+                print("     Process SJF preemptive Queue: " + str([p[0].id for p in SJFpreemptiveQueue if len(SJFpreemptiveQueue) > 0]))
+                print("     Remaining time for each process: " + str([p[1] for p in SJFpreemptiveQueue if len(SJFpreemptiveQueue) > 0]))
                 processIndex += 1
         except:
-            print("No more processes to add")
-        
-        #check if current process has ended already. if not, then update timeleft
-        if currentProcess != None:
-            if currentProcess[1] == 0:
-                print(f"     Process {currentProcess[0].id} has terminated")
-                isRunning = False
-                currentProcess = None
-                processLeft -= 1
-            else: 
-                print(f"     Process {currentProcess[0].id} ran for 1 ns")
-                currentProcess[1] -= 1
+            pass
 
-        #update waiting time of other processes
-        for p in SJF_preemptive_queue:
-            p[0].waitingTime += 1
-
-        #if there's nothing running and SJFqueue has stuff waiting
-        if currentProcess == None and len(SJF_preemptive_queue) > 0:
-            currentProcess = SJF_preemptive_queue.pop(0)
+        # get new process
+        if currentProcess == None and len(SJFpreemptiveQueue) > 0:
+            currentProcess = SJFpreemptiveQueue.pop(0)
             print("     Process "+str(currentProcess[0].id)+" is running")
-            isRunning = True
-        ns += 1
-        print( [ p[0].id for p in SJF_preemptive_queue if len(SJF_preemptive_queue) > 0])
-        time.sleep(0.75)
-
-
-
-def sjf_preemptive(pList):
-
-    print("Processes sorted by arrival time")
-    for i in range(processNum):
-        print("Process "+str(processList[i].id)+" A_t: "+ str(pList[i].arrivalTime)+" T_t: "+str(pList[i].turnaroundTime))
-    print("======================================")
-
-    SJF_preemptive_queue = []
-    isRunning = []
-    currentProcess = None # formatted as (process_obj, int_timeLeft)
-    processIndex = 0
-    processLeft = len(pList)
-    ns = 0
-
-    while (processLeft > 0):
-        print(ns)
-        try:
-            #take all processes that arrive at this nanosecond
-            while(pList[processIndex].arrivalTime == ns):
-                arrivingProc = pList[processIndex]
-                print("     Process "+str(arrivingProc.id)+ " has arrived")
-                # check if it can preempt the current process if there is one
-                if currentProcess != None:
-                    # preemption condition
-                    if arrivingProc.turnaroundTime < currentProcess[1]:
-                        BST_Insert_2(currentProcess, SJF_preemptive_queue)
-                        currentProcess = [arrivingProc, arrivingProc.turnaroundTime]
-                        print(f"     Process {arrivingProc.id} is faster. Proceed to preemption.")
-                    # no preemption
-                    else:
-                        ob_t = [arrivingProc, arrivingProc.turnaroundTime]
-                        BST_Insert_2(ob_t, SJF_preemptive_queue)
-                else:
-                    currentProcess = [arrivingProc, arrivingProc.turnaroundTime]
-               
-                print("     Process SJF Queue: " + str(SJF_preemptive_queue))
-                processIndex += 1
-        except:
-            print("No more processes to add")
         
-        #check if current process has ended already. if not, then update timeleft
+        #run or terminating processes
         if currentProcess != None:
+            currentProcess[1] -= 1
+            print("     Process "+str(currentProcess[0].id)+" ran for 1 ns")
+
             if currentProcess[1] == 0:
-                print(f"     Process {currentProcess[0].id} has terminated")
-                isRunning = False
+                print("     Process "+str(currentProcess[0].id)+" has terminated")
+                print("     Process SJF preemptive Queue: " + str([p[0].id for p in SJFpreemptiveQueue if len(SJFpreemptiveQueue) > 0]))
+                print("     Remaining time for each process: " + str([p[1] for p in SJFpreemptiveQueue if len(SJFpreemptiveQueue) > 0]))
                 currentProcess = None
-                processLeft -= 1
-            else: 
-                print(f"     Process {currentProcess[0].id} ran for 1 ns")
-                currentProcess[1] -= 1
+                processesLeft -= 1
 
-        #update waiting time of other processes
-        for p in SJF_preemptive_queue:
-            p[0].waitingTime += 1
-
-        #if there's nothing running and SJFqueue has stuff waiting
-        if currentProcess == None and len(SJF_preemptive_queue) > 0:
-            currentProcess = SJF_preemptive_queue.pop(0)
-            print("     Process "+str(currentProcess[0].id)+" is running")
-            isRunning = True
-        ns += 1
-        print( [ p[0].id for p in SJF_preemptive_queue if len(SJF_preemptive_queue) > 0])
-        time.sleep(0.75)
+        if(len(SJFpreemptiveQueue)>0):
+            for p in SJFpreemptiveQueue:
+                print("     Process "+str(p[0].id)+ " is ready")
+                p[0].waitingTime += 1
 
 
+        ns+=1
+        #time.sleep(0.5)
 
 algorithm = (input("Which Scheduling algorithm would you like to simulate,type \n either SJF, Preemptive, or Round Robin only."))
 algorithm.lower
@@ -331,7 +282,7 @@ if algorithm == "sjf":
     sjf(processList)
 elif algorithm == "preemptive":
     mergeSort_arrivalTime(processList)
-    sjf_preemptive(processList)
+    sjf_preemptive_2(processList)
 elif (algorithm == "round robin" or algorithm == "roundrobin"):
     algorithm = "do something"
 
