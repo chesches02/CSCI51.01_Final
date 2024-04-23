@@ -420,18 +420,19 @@ print("========================================================")
 print("SIMULATION TERMINATED. Here are the stats of each process")
 for i in range(len(processList)):
     proc = processDict[str(i)]
-    print("     Process " + str(i) + " A_t: " + str(proc.arrivalTime) + " T_t: " + str(proc.turnaroundTime) + " W_t: " + str(proc.waitingTime))
+    print(f"     Process {i} A_t: {proc.arrivalTime:<4} T_t_expected: {proc.turnaroundTime:<4} W_t: {proc.waitingTime:<4} T_t_actual: {proc.waitingTime + proc.turnaroundTime:<4}")
+    #print("     Process " + str(i) + " A_t: " + str(proc.arrivalTime) + " T_t_expected: " + str(proc.turnaroundTime) + " W_t: " + str(proc.waitingTime) + " T_t_actual:" + str(proc.turnaroundTime + proc.waitingTime))
 print("\nHere's some stats across all processes")
 total_T_t = 0
 total_W_t = 0
 
 for p in processList:
-    total_T_t += p.turnaroundTime
+    total_T_t += (p.turnaroundTime + p.waitingTime)
     total_W_t += p.waitingTime
 
-print("     Total turnaround time: " + str(total_T_t) + " ns")
+print("     Total actual turnaround time: " + str(total_T_t) + " ns")
 print("     Total waiting time: " + str(total_W_t) + " ns")
 print("")
-print("     Average turnaround time: " + str(total_T_t/len(processList)) + " ns")
+print("     Average actual turnaround time: " + str(total_T_t/len(processList)) + " ns")
 print("     Average waiting time: " + str(total_W_t/len(processList)) + " ns")
 print("========================================================")
